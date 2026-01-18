@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wyoming-xtts"
+dynamic = ["version"]
+description = "Wyoming-compatible XTTS Text-to-Speech server for Home Assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # PyTorch - install with: --extra-index-url https://download.pytorch.org/whl/cu126
+    # cu126 has sm_60 which covers Pascal GPUs (GTX 1080/1080 Ti)
+    "torch==2.7.1",
+    "torchaudio==2.7.1",
+    "wyoming[zeroconf]>=1.8.0",
+    "coqui-tts==0.24.3",
+    "deepspeed==0.17.2",
+    "langdetect>=1.0.9",
+    "sentence-stream>=1.2.0",
+    "pydantic-settings>=2.0",
+    "requests>=2.23.0",
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "types-requests",
+]
+
+[project.scripts]
+wyoming-xtts = "wyoming_xtts.__main__:run"
+
+[tool.setuptools]
+packages = ["wyoming_xtts"]
+
+[tool.setuptools_scm]
+# version from git tags: v1.0.0 -> 1.0.0
+# untagged commits: 1.0.0.dev1+g1234567
+
+[tool.ruff]
+target-version = "py311"
+line-length = 140
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "PL",     # pylint
+    "RUF",    # ruff-specific
+    "PERF",   # perflint
+]
+ignore = [
+    "PLR0913",  # too many arguments - XTTS has many params
+    "PLR2004",  # magic values - audio constants are fine
+    "PLR0911",  # too many return statements - event handlers have many branches
+    "PLR0915",  # too many statements - main() is fine as-is
+    "PLC0415",  # import not at top level - zeroconf is optional dependency
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["wyoming_xtts"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "TTS.*",
+    "langdetect.*",
+    "sentence_stream.*",
+    "wyoming.*",
+    "deepspeed.*",
+]
+ignore_missing_imports = true
