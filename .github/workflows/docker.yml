@@ -16,6 +16,19 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - cuda_variant: cu126
+            cuda_image: nvidia/cuda:12.6.3-devel-ubuntu22.04
+            torch_index: https://download.pytorch.org/whl/cu126
+            torch_arch: "6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+            is_default: true
+          - cuda_variant: cu128
+            cuda_image: nvidia/cuda:12.8.1-devel-ubuntu22.04
+            torch_index: https://download.pytorch.org/whl/cu128
+            torch_arch: "7.0;7.5;8.0;8.6;8.9;9.0;12.0"
+            is_default: false
     steps:
       - name: Free up disk space
         run: |
@@ -38,17 +51,33 @@ jobs:
       - name: Generate tags and version
         id: meta
         run: |
+          VARIANT="${{ matrix.cuda_variant }}"
+          IS_DEFAULT="${{ matrix.is_default }}"
+
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#v}"  # Strip 'v' prefix
-            echo "tags=${{ env.IMAGE_NAME }}:${VERSION},${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+            TAGS="${{ env.IMAGE_NAME }}:${VERSION}-${VARIANT}"
+            if [[ "$IS_DEFAULT" == "true" ]]; then
+              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${VERSION},${{ env.IMAGE_NAME }}:latest"
+            fi
+            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
           elif [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            echo "tags=${{ env.IMAGE_NAME }}:${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-            echo "version=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            TAG="${{ github.event.inputs.tag }}"
+            TAGS="${{ env.IMAGE_NAME }}:${TAG}-${VARIANT}"
+            if [[ "$IS_DEFAULT" == "true" ]]; then
+              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${TAG}"
+            fi
+            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+            echo "version=${TAG}" >> $GITHUB_OUTPUT
           else
             SHA="${{ github.sha }}"
-            echo "tags=${{ env.IMAGE_NAME }}:${SHA::7}" >> $GITHUB_OUTPUT
+            TAGS="${{ env.IMAGE_NAME }}:${SHA::7}-${VARIANT}"
+            if [[ "$IS_DEFAULT" == "true" ]]; then
+              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${SHA::7}"
+            fi
+            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
             echo "version=0.0.0.dev0+${SHA::7}" >> $GITHUB_OUTPUT
           fi
 
@@ -60,3 +89,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
+            CUDA_IMAGE=${{ matrix.cuda_image }}
+            TORCH_INDEX_URL=${{ matrix.torch_index }}
+            TORCH_CUDA_ARCH_LIST=${{ matrix.torch_arch }}

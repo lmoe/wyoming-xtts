@@ -30,6 +30,8 @@ docker run -d \
   lmo3/wyoming-xtts
 ```
 
+**Note**: use `lmo3/wyoming-xtts:cu128` when using an Nvidia 5xxx card. 
+
 Then add to Home Assistant:
 
 1) Settings -> Devices & services -> Add integration -> Wyoming Protocol -> Enter IP and Port (Default 10200) / Or, use the auto detected wyoming-xtts node if HA received the Zeroconf advertisement. 
