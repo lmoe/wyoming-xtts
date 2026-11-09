@@ -17,6 +17,8 @@ from .audio import tensor_to_pcm
 if TYPE_CHECKING:
     from wyoming.server import AsyncEventHandler
 
+    from .pronunciations import Pronunciations
+
 _LOGGER = logging.getLogger(__name__)
 
 # XTTS audio output format
@@ -46,9 +48,11 @@ class XTTSEngine:
         repetition_penalty: float = 10.0,
         stream_chunk_size: int = 20,
         seed: int | None = None,
+        pronunciations: "Pronunciations | None" = None,
     ):
         self.model_path = model_path
         self.seed = seed
+        self.pronunciations = pronunciations
         self.use_deepspeed = use_deepspeed
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.temperature = temperature
@@ -130,6 +134,9 @@ class XTTSEngine:
     ) -> AsyncGenerator[bytes, None]:
         if self.model is None:
             raise RuntimeError("Model not loaded")
+
+        if self.pronunciations is not None:
+            text = self.pronunciations.apply(text)
 
         async with self._lock:
             gpt_cond_latent, speaker_embedding = await self._get_conditioning_latents(voice_path)

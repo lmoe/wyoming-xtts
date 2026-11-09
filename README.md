@@ -48,7 +48,8 @@ Mount a folder or volume to `/data`. The server handles the rest:
 /data/
 ├── models/    # XTTS model files (~2GB, auto-downloaded if missing)
 ├── voices/    # Your voice samples (WAV files, 6-30 seconds each)
-└── cache/     # Torch compilation cache
+├── cache/     # Torch compilation cache
+└── pronunciations.txt  # Optional word respellings (see below)
 ```
 
 Voice files are picked up by filename. Put `sarah.wav` in the voices folder, select "sarah" in Home Assistant.
@@ -56,6 +57,21 @@ Voice files are picked up by filename. Put `sarah.wav` in the voices folder, sel
 Voice samples should be WAV files, mono, 22050 Hz, 16-bit PCM. XTTS resamples other formats internally but this avoids unnecessary conversion. Aim for 6-30 seconds of clear speech without background noise.
 
 When DeepSpeed is enabled, it compiles a few libraries on first start. These go into the cache folder, so you don't have to compile them again after redeploying the docker container.
+
+### Pronunciations
+
+XTTS has no SSML or phoneme input, so a mispronounced name can only be fixed by respelling it. Put a `pronunciations.txt` in the assets folder with one rule per line:
+
+```
+# Word = how to spell it so XTTS says it right
+Siobhan = Shiv-awn
+Nguyen = Win
+San Jose = San Ho-zay
+```
+
+Rules match whole words and phrases, ignoring case, so `Siobhan's` is fixed too. The file is checked before each sentence and reloaded when it changes, so edits apply without a restart. Without the file, nothing changes.
+
+Finding the right respelling takes some trial and error. Try a few spellings in a test sentence and keep the one that sounds best with your voice.
 
 ## Configuration
 
