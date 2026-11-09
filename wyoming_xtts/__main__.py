@@ -17,6 +17,7 @@ from .config import Settings
 from .download import BASE_URL, check_model_exists, download_model
 from .engine import XTTSEngine, set_seed
 from .handler import XTTSEventHandler
+from .pronunciations import Pronunciations
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -145,6 +146,7 @@ async def main() -> None:
         repetition_penalty=args.repetition_penalty,
         stream_chunk_size=args.stream_chunk_size,
         seed=args.seed,
+        pronunciations=Pronunciations(args.assets / "pronunciations.txt"),
     )
     await engine.load()
     _LOGGER.info(
